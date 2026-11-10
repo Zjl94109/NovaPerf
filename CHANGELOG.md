@@ -4,6 +4,8 @@
 
 发布工程性修复。**SDK / CLI / 诊断引擎 / 报告功能与 v1.0.0 完全一致**，Android 源码未改动，`NovaPerf-SDK.aar` 与 `NovaPerf-Demo.apk` 沿用 v1.0.0 已真机验证的产物（未重编译）。
 
+> SDK 内 `sdkTag` 保持 `novaperf/1.0.0`，表示 SDK 行为与 JSONL 数据契约 v1 未变；**v1.0.1 是发布版本号**，用于把 CI 修复、文档订正与可下载资产挂到正确的 tag 上。
+
 ### 修复
 - `android.yml`：移除在本账号 runner 上崩溃的 `setup-android@v3`（`Failed to find package 'tools'`），改用 runner 自带 Android SDK + `sdkmanager` 补装 platform 36 / build-tools。
 - `ios.yml`：GitHub 判 `macos-14-arm64-us-default is not supported` 直接取消工作流；改为「每次提交自动跑 Linux Swift 语法校验 + 完整 macOS 构建手动触发」，避免仓库里常驻一个永远排队的作业。
@@ -23,10 +25,11 @@
 | `NovaPerf-Report.html` | 单文件离线诊断报告（真机数据） |
 | `report_preview.png` | 报告渲染截图 |
 
-### CI（最终提交）
-- Android SDK & Demo：**success**（AAR / APK 构建 + 产物上传）
-- CLI, Diagnostics & Gate：**success**（契约校验 / 报告 / 门禁）
-- iOS Swift Package：`swift-syntax` **success**；`macos-build` 手动触发（未执行，已在文档标注）
+### CI（发版提交，三条工作流全绿）
+- **Android SDK & Demo：success** — Ubuntu 上真实编译 AAR / Demo APK 并上传 artifact。
+- **CLI, Diagnostics & Gate：success** — 两份真机会话 `validate`、诊断报告生成、`gate` 门禁。
+- **iOS Swift Package：swift-syntax success** — 官方 `swift:5.9` 容器内 `swiftc -parse` + `swift build` + `swift test`（共享核心真实编译并执行单元测试）；`macos-build` 按设计跳过（Actions 手动触发）。
+- 本机复核：`doctor` 通过；`validate` 87 行 / 1536 行两份会话均通过；`gate` PASS（健康分 92、critical 0、warn 1）；报告无头浏览器渲染确认。
 
 ## v1.0.0 — 2026-11-10
 

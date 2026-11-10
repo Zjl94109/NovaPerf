@@ -4,6 +4,10 @@
 
 > 本机为 Windows（无 Xcode / macOS），iOS 端**未在真机验证**。CI 每次提交在官方 `swift:5.9` Linux 容器中自动跑 `swiftc -parse` + `swift build` + `swift test`（真实编译并执行单元测试，覆盖共享核心）；`xcodebuild -destination iOS Simulator` 与 macOS 编译作业因账号 macOS runner 配置限制（`macos-14-arm64-us-default is not supported`，`macos-13` 排队）改为**手动触发**（Actions → iOS Swift Package → Run workflow）。代码中所有 UIKit / Darwin 专属依赖都用 `#if os(iOS)` / `#if canImport(Darwin)` 隔离，Linux 上不可得的能力（热状态、崩溃钩子）诚实返回 `unknown` 或不注册，不编造数值。
 
+## CI 实际验证边界
+
+Linux Swift 5.9 容器每次提交自动执行 `swiftc -parse` → `swift build` → `swift test`，**已通过**：JSONL 契约、`NaN/Infinity → null`、分位数、`SessionWriter` 写出 meta / sample / summary、`status.json`、采样调度与 `null` 语义。Linux 上被条件编译排除的是 Darwin / UIKit 专属分支（`CADisplayLink`、`task_info`、`UIDevice`、`NSUncaughtExceptionHandler`）；这些只在手动触发的 macOS 作业与 iOS 真机上验证，当前环境（Windows）**尚未覆盖**。
+
 ## 集成（Swift Package Manager）
 
 Xcode → File → Add Package Dependencies → 填入本仓库路径，选择 `NovaPerf` library；或 `Package.swift`：
