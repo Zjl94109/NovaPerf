@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NovaPerf 性能诊断报告</title>
+<style>
+:root{
+  --bg:#f7f8fa; --panel:#ffffff; --line:#e3e7ed; --line2:#eef1f5;
+  --fg:#1c2330; --fg2:#5b6675; --fg3:#8a95a5;
+  --accent:#2563eb; --critical:#c62828; --warn:#b26a00; --info:#2563eb; --ok:#137a52;
+  --band:#2563eb; --grid:#eceff4; --shadow:0 1px 2px rgba(20,30,50,.04);
+}
+body.dark{
+  --bg:#141821; --panel:#1c2230; --line:#2c3547; --line2:#252d3d;
+  --fg:#e8edf5; --fg2:#a6b2c4; --fg3:#77859a;
+  --accent:#6da0ff; --critical:#ff6b6b; --warn:#e5a54b; --info:#6da0ff; --ok:#54c999;
+  --band:#6da0ff; --grid:#2a3244; --shadow:none;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Arial,sans-serif}
+a{color:var(--accent);text-decoration:none}
+.wrap{display:flex;min-height:100vh}
+nav{width:210px;flex:0 0 210px;position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--panel);padding:22px 14px;overflow:auto}
+nav .brand{font-size:16px;font-weight:700;letter-spacing:.3px;margin:0 0 4px 8px}
+nav .sub{font-size:11px;color:var(--fg3);margin:0 0 22px 8px}
+nav a{display:block;padding:8px 10px;color:var(--fg2);border-left:2px solid transparent;font-size:13px;border-radius:0 4px 4px 0}
+nav a:hover{color:var(--fg);border-left-color:var(--accent);background:var(--line2)}
+nav .nav-note{font-size:11px;color:var(--fg3);margin:22px 8px 0;line-height:1.7;border-top:1px solid var(--line);padding-top:14px}
+main{flex:1;min-width:0;padding:26px 30px 70px;max-width:1500px}
+header.top{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:22px}
+h1{font-size:23px;margin:0 0 6px;font-weight:700}
+.meta{color:var(--fg2);font-size:12.5px}
+.meta span{margin-right:14px;white-space:nowrap}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-size:12.5px;color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:5px;padding:6px 11px;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{border-color:var(--accent);color:var(--accent)}
+.score{display:flex;align-items:center;gap:12px}
+.score .num{font-size:38px;font-weight:700;line-height:1}
+.score .lab{font-size:11px;color:var(--fg3)}
+section{margin-bottom:34px;scroll-margin-top:16px}
+h2{font-size:16px;margin:0 0 4px;font-weight:700;display:flex;align-items:center;gap:9px}
+h2 .idx{color:var(--fg3);font-size:12px;font-weight:500}
+.desc{font-size:12.5px;color:var(--fg2);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px}
+.card{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:12px 13px;box-shadow:var(--shadow)}
+.card .k{font-size:11.5px;color:var(--fg3);margin-bottom:5px}
+.card .v{font-size:21px;font-weight:650;letter-spacing:-.4px}
+.card .u{font-size:11px;color:var(--fg3);font-weight:400;margin-left:3px}
+.card .n{font-size:11px;color:var(--fg3);margin-top:4px}
+.panel{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:14px 16px;box-shadow:var(--shadow)}
+.issue{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:11px;background:var(--panel)}
+.issue.critical{border-left-color:var(--critical)}
+.issue.warn{border-left-color:var(--warn)}
+.issue.info{border-left-color:var(--info)}
+.issue .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.issue .title{font-weight:650;font-size:14.5px}
+.issue .win{color:var(--fg3);font-size:12px;font-variant-numeric:tabular-nums}
+.sev{font-size:11px;border:1px solid currentColor;border-radius:3px;padding:0 6px;line-height:19px;background:transparent}
+.sev.critical{color:var(--critical)}.sev.warn{color:var(--warn)}.sev.info{color:var(--info)}.sev.ok{color:var(--ok)}
+.issue .row{display:grid;grid-template-columns:92px 1fr;gap:8px;margin-top:9px;font-size:12.5px}
+.issue .row .lab{color:var(--fg3)}
+.issue .row .val{color:var(--fg)}
+.issue .actions{margin:2px 0 0;padding-left:18px;color:var(--fg2)}
+.issue .foot{margin-top:11px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px}
+.chip{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 6px;color:var(--fg2);background:transparent}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line2);white-space:nowrap}
+th{color:var(--fg3);font-weight:600;font-size:11.5px;position:sticky;top:0;background:var(--panel);z-index:1}
+tr:hover td{background:var(--line2)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablebox{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+input,select{font:inherit;font-size:12.5px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:6px 9px}
+input{min-width:200px}
+.chart{border:1px solid var(--line);border-radius:6px;background:var(--panel);margin-bottom:10px;padding:8px 12px 4px}
+.chart .ch{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--fg2)}
+.chart .ch b{color:var(--fg);font-size:13px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart svg text{fill:var(--fg3);font-size:10px;font-family:inherit}
+.chart svg .axis{stroke:var(--line);stroke-width:1}
+.chart svg .grid{stroke:var(--grid);stroke-width:1;stroke-dasharray:3 3}
+.chart svg .line{fill:none;stroke-width:1.7}
+.chart svg .area{stroke:none;opacity:.10}
+.chart svg .ev{stroke:var(--fg3);stroke-width:1;stroke-dasharray:2 3;opacity:.55}
+.chart svg .band{opacity:.055}
+.chart svg .focus{fill:var(--accent);opacity:.07;stroke:var(--accent);stroke-width:1;stroke-dasharray:4 3}
+.chart svg .cursor{stroke:var(--accent);stroke-width:1;opacity:.65}
+.chart svg .hit{fill:transparent;cursor:crosshair}
+.nodata{color:var(--fg3);font-size:12px;padding:18px 4px}
+#tip{position:fixed;pointer-events:none;z-index:99;display:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.14);padding:9px 11px;font-size:12px;min-width:190px}
+#tip .t{color:var(--fg3);margin-bottom:5px;font-size:11px}
+#tip table td,#tip table th{border:0;padding:2px 6px;background:transparent}
+.bar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px;color:var(--fg2)}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11.5px}
+.note{font-size:12px;color:var(--fg2);line-height:1.8;margin:8px 0 0}
+.ok-txt{color:var(--ok)}.bad-txt{color:var(--critical)}.warn-txt{color:var(--warn)}
+details summary{cursor:pointer;color:var(--accent);font-size:12px}
+pre{white-space:pre-wrap;word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:9px;font-size:11px;color:var(--fg2);max-height:240px;overflow:auto}
+footer{color:var(--fg3);font-size:11.5px;border-top:1px solid var(--line);padding-top:14px;margin-top:30px}
+@media(max-width:900px){.wrap{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}nav a{display:inline-block;border-left:0;border-bottom:2px solid transparent}main{padding:20px 14px 60px}}
+@media print{nav,.tools,button{display:none!important}main{padding:0}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="brand">NovaPerf</div>
+  <div class="sub">跨平台性能诊断报告</div>
+  <a href="#overview">01 指标总览</a>
+  <a href="#diagnosis">02 诊断摘要</a>
+  <a href="#timeline">03 联动时间轴</a>
+  <a href="#events">04 事件检索</a>
+  <a href="#raw">05 原始采样</a>
+  <a href="#baseline">06 基线 / 门禁</a>
+  <a href="#glossary">07 指标口径</a>
+  <div class="nav-note">
+    单文件离线报告 · 无 CDN<br>
+    数据源：<span id="nav-src" class="mono"></span><br>
+    生成：<span id="nav-time"></span>
+  </div>
+</nav>
+<main>
+<header class="top">
+  <div>
+    <h1 id="title">性能诊断报告</h1>
+    <div class="meta" id="meta"></div>
+  </div>
+  <div class="tools">
+    <div class="score"><div><div class="num" id="score">—</div><div class="lab">健康分 / 100</div></div></div>
+    <button id="theme">切换主题</button>
+    <button id="csv">导出 CSV</button>
+    <button onclick="window.print()">打印</button>
+  </div>
+</header>
+
+<section id="overview">
+  <h2><span class="idx">01</span> 指标总览</h2>
+  <p class="desc" id="precision"></p>
+  <div class="grid" id="kpis"></div>
+  <div style="height:16px"></div>
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <b style="font-size:13px">指标覆盖率</b>
+      <span class="desc" style="margin:0">不可用字段按契约写 <span class="mono">null</span>，报告不画成 0</span>
+    </div>
+    <div class="tablebox" style="max-height:300px"><table id="coverage"></table></div>
+  </div>
+  <div style="height:12px"></div>
+  <div class="panel">
+    <b style="font-size:13px">场景分段</b>
+    <div class="tablebox" style="max-height:260px;margin-top:8px"><table id="scenes"></table></div>
+  </div>
+</section>
+
+<section id="diagnosis">
+  <h2><span class="idx">02</span> 诊断摘要 · Top 问题清单</h2>
+  <p class="desc">每项包含可复核的触发规则、实测证据、关联指标、根因假设与排查动作；点「定位」联动跳转时间轴。</p>
+  <div id="issues"></div>
+</section>
+
+<section id="timeline">
+  <h2><span class="idx">03</span> 多指标联动时间轴</h2>
+  <p class="desc">共享时间轴，悬停查看同一时刻全部指标；场景分段与事件打点叠加显示；点问题卡「定位」可框选并放大窗口。</p>
+  <div class="bar">
+    <span id="focus-info">当前范围：全会话</span>
+    <button id="reset">重置缩放</button>
+    <span class="desc" style="margin:0">虚线 = 事件打点；浅色带 = 场景分段</span>
+  </div>
+  <div id="charts"></div>
+  <div id="frame-note" class="note"></div>
+</section>
+
+<section id="events">
+  <h2><span class="idx">04</span> 事件 / 日志检索</h2>
+  <p class="desc">场景打点、HTTP、生命周期、疑似 ANR、崩溃与堆栈。点击任一行可定位到对应时间窗。</p>
+  <div class="filters">
+    <select id="f-kind"><option value="">全部类型</option></select>
+    <select id="f-level"><option value="">全部级别</option><option>info</option><option>warn</option><option>error</option></select>
+    <input id="f-q" placeholder="搜索 label / detail / stack / page">
+    <span class="desc" style="margin:0" id="ev-count"></span>
+  </div>
+  <div class="tablebox"><table id="events-table"></table></div>
+</section>
+
+<section id="raw">
+  <h2><span class="idx">05</span> 原始采样</h2>
+  <p class="desc">逐行对应设备落盘的 JSONL；CSV 导出包含全部采样（不受当前筛选影响）。</p>
+  <div class="filters">
+    <select id="r-scene"><option value="">全部场景</option></select>
+    <input id="r-q" placeholder="搜索 seq / page / scene">
+    <button id="csv2">导出全部 CSV</button>
+    <span class="desc" style="margin:0" id="raw-count"></span>
+  </div>
+  <div class="tablebox"><table id="raw-table"></table></div>
+</section>
+
+<section id="baseline">
+  <h2><span class="idx">06</span> 基线对比与 CI 门禁</h2>
+  <div class="panel" id="baseline-box"></div>
+  <div style="height:12px"></div>
+  <div class="panel" id="gate-box"></div>
+</section>
+
+<section id="glossary">
+  <h2><span class="idx">07</span> 指标口径与数据契约</h2>
+  <p class="desc">报告中的每个数字都可追溯到此处的公式；精度不足或平台不支持时明确标注，不估算、不伪造。</p>
+  <div class="panel"><div class="tablebox" style="max-height:420px"><table id="glossary-table"></table></div>
+    <div class="note" id="contract"></div>
+  </div>
+</section>
+
+<footer>
+  NovaPerf · 开源跨平台性能诊断 · 单文件离线报告（无外部依赖）<br>
+  <span id="footer-src"></span>
+</footer>
+</main>
+</div>
+<div id="tip"></div>
+<script id="np-data" type="application/json">__NOVAPERF_DATA__</script>
+<script>
+(function(){
+"use strict";
+var D = JSON.parse(document.getElementById('np-data').textContent);
+var $ = function(s){ return document.querySelector(s); };
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function num(v,nd){ if(v===null||v===undefined||typeof v!=='number'||!isFinite(v)) return '—';
+  var n = Number(v.toFixed(nd===undefined?2:nd)); return String(n); }
+function rel(ms){ return ((ms-D.t_start)/1000).toFixed(1)+'s'; }
+function absTime(ms){ var d=new Date(ms); return d.toLocaleTimeString('zh-CN',{hour12:false})+'.'+String(d.getMilliseconds()).padStart(3,'0'); }
+var state={focus:null,kind:'',level:'',q:'',rscene:'',rq:''};
+
+// ---------- 头部 ----------
+$('#title').textContent = (D.source.label && D.source.label!==D.source.file) ? D.source.label : '性能诊断报告';
+var m=D.meta||{};
+$('#meta').innerHTML = [
+  ['应用',esc(m.app_name||m.app||'—')+' <span class="mono">'+esc(m.app_version||'')+'</span>'],
+  ['平台',esc(m.platform||'—')],
+  ['设备',esc((m.device||'')+' '+(m.model||''))],
+  ['系统',esc(m.os||'')+' / API '+esc(m.api==null?'—':m.api)],
+  ['刷新率',num(m.refresh_hz,1)+' Hz'],
+  ['会话',esc(m.session_id||'—')],
+  ['时长',num(D.kpi.duration_s,1)+' s'],
+  ['生成',esc(D.generated_at)]
+].map(function(x){return '<span>'+x[0]+'：'+x[1]+'</span>';}).join('');
+$('#score').textContent=D.score;
+$('#score').style.color = D.score>=85?'var(--ok)':(D.score>=70?'var(--warn)':'var(--critical)');
+$('#nav-src').textContent=D.source.file; $('#nav-time').textContent=D.generated_at;
+$('#footer-src').textContent='数据源 '+D.source.file+' · '+D.source.lines+' 行 · SHA256(前16) '+D.source.sha256+' · schema v1';
+$('#precision').textContent='帧数据精度：'+D.kpi.precision+'；设备声明 '+num(D.kpi.refresh_declared,1)+' Hz，实测渲染节奏 '+num(D.kpi.refresh_effective,1)+' Hz（按实测值定帧预算，避免高刷屏误报）；帧预算 '+num(D.kpi.frame_budget_ms)+' ms；低帧阈值 '+num(D.fps_floor)+' FPS。'
+  +(D.kpi.low1_fps===null?' 未开启逐帧明细时，1% Low 不参与统计（不以窗口聚合值冒充精确值）。':'');
+
+// ---------- KPI ----------
+var k=D.kpi;
+var kpis=[
+ ['AvgFPS',k.avg_fps,'', '有效窗口均值'],
+ ['最低 FPS',k.min_fps,'', '窗口最低'],
+ ['1% Low FPS',k.low1_fps,'', k.low1_fps===null?'需逐帧明细':'最慢 1% 帧'],
+ ['5% Low FPS',k.low5_fps,'', k.low5_fps===null?'—':(k.frames_logged?'最慢 5% 帧（精确）':'窗口 P95 估算')],
+ ['P95 帧耗时',k.frame_p95_ms,'ms', k.precision],
+ ['Jank / BigJank',k.jank+' / '+k.big_jank,'次','冻帧 '+k.frozen],
+ ['CPU 均值 / P95',k.cpu_avg+' / '+k.cpu_p95,'%','峰值 '+num(k.cpu_max)+'%'],
+ ['PSS 均值 / 峰值',num(k.pss_avg/1024,1)+' / '+num(k.pss_max/1024,1),'MB','起 '+num(k.pss_start/1024,1)+' → 末 '+num(k.pss_end/1024,1)],
+ ['网络下行峰值',num(k.net_rx_peak_bps/1024,1),'KB/s','累计 '+num(k.net_rx_total_kb,1)+' KB'],
+ ['网络请求 / 失败',k.net_req+' / '+k.net_err,'次','HTTP 事件 '+k.http_events],
+ ['主线程最大延迟',k.main_thread_max_ms,'ms','疑似 ANR '+k.anr_risk],
+ ['电量 / 温度',num(k.battery_pct,1)+' / '+num(k.temp_c,1),'% / °C','热状态 '+esc(k.thermal_state)],
+ ['事件 / 场景',k.events+' / '+k.scenes,'个','采样 '+k.samples],
+ ['崩溃',k.crashes,'次',k.crashes?'需排查':'无']
+];
+$('#kpis').innerHTML=kpis.map(function(x){
+  return '<div class="card"><div class="k">'+esc(x[0])+'</div><div class="v">'+esc(x[1])+(x[2]?'<span class="u">'+esc(x[2])+'</span>':'')+'</div><div class="n">'+esc(x[3])+'</div></div>';
+}).join('');
+
+// ---------- 覆盖率 ----------
+$('#coverage').innerHTML='<thead><tr><th>指标字段</th><th>单位</th><th style="text-align:right">有效采样</th><th style="text-align:right">覆盖率</th><th>状态</th></tr></thead><tbody>'
+ +D.coverage.map(function(c){
+   var cls=c.status==='可用'?'ok':(c.status==='不可用'?'':'warn');
+   return '<tr><td class="mono">'+esc(c.key)+'</td><td>'+esc(c.unit)+'</td><td class="num">'+c.count+'</td><td class="num">'+num(c.ratio*100,1)+'%</td><td><span class="sev '+cls+'-txt '+cls+'">'+esc(c.status)+'</span></td></tr>';
+ }).join('')+'</tbody>';
+
+// ---------- 场景 ----------
+$('#scenes').innerHTML='<thead><tr><th>场景</th><th>窗口</th><th>时长</th><th>AvgFPS</th><th>CPU%</th><th>PSS(MB)</th><th>Jank</th><th>时间</th></tr></thead><tbody>'
+ +(D.scenes.length?D.scenes.map(function(s){
+   return '<tr><td><b>'+esc(s.name)+'</b></td><td class="num">'+s.samples+'</td><td class="num">'+num(s.duration_s,1)+'s</td><td class="num">'+num(s.fps)+'</td><td class="num">'+num(s.cpu)+'</td><td class="num">'+num(s.pss/1024,1)+'</td><td class="num">'+s.jank+'</td><td>'+rel(s.t0)+' ~ '+rel(s.t1)+'</td></tr>';
+ }).join(''):'<tr><td colspan="8" class="nodata">无场景数据</td></tr>')+'</tbody>';
+
+// ---------- 诊断问题 ----------
+function setFocus(t0,t1){
+  state.focus=[t0,t1]; renderCharts();
+  $('#focus-info').textContent='当前范围：'+rel(t0)+' ~ '+rel(t1)+'（'+num((t1-t0)/1000,1)+'s）';
+  document.getElementById('timeline').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('#issues').innerHTML = (D.issues.length?D.issues.map(function(i){
+  var metrics=Object.keys(i.metrics||{}).map(function(k){return '<span class="chip">'+esc(k)+' '+esc(i.metrics[k])+'</span>';}).join('');
+  return '<div class="issue '+i.severity+'">'
+   +'<div class="head"><span class="sev '+i.severity+'">'+({critical:'严重',warn:'警告',info:'提示'})[i.severity]+'</span>'
+   +'<span class="title">'+esc(i.title)+'</span><span class="win">'+rel(i.t0)+' ~ '+rel(i.t1)+'（'+num(i.window_s,1)+'s，采样 #'+i.i0+'–#'+i.i1+'）</span></div>'
+   +'<div class="row"><div class="lab">触发规则</div><div class="val mono">'+esc(i.rule)+'</div></div>'
+   +'<div class="row"><div class="lab">实测证据</div><div class="val">'+esc(i.evidence)+'</div></div>'
+   +'<div class="row"><div class="lab">数值</div><div class="val chips">'+metrics+'</div></div>'
+   +'<div class="row"><div class="lab">关联指标</div><div class="val chips">'+(i.correlated||[]).map(function(c){return '<span class="chip mono">'+esc(c)+'</span>';}).join('')+'</div></div>'
+   +'<div class="row"><div class="lab">根因假设</div><div class="val">'+esc(i.hypothesis)+'</div></div>'
+   +'<div class="row"><div class="lab">排查动作</div><div class="val"><ol class="actions">'+(i.actions||[]).map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ol></div></div>'
+   +'<div class="foot"><button class="primary" data-t0="'+i.t0+'" data-t1="'+i.t1+'">定位到时间轴</button><span class="desc" style="margin:0">健康分影响 -'+i.score_cost+'</span></div>'
+   +'</div>';
+}).join(''):'<div class="panel"><span class="ok-txt">✓ 未触发任何诊断规则</span><div class="note">当前规则集：'+Object.keys(D.rules).map(function(x){return x+'='+D.rules[x];}).join(' · ')+'</div></div>');
+Array.prototype.forEach.call(document.querySelectorAll('#issues button[data-t0]'),function(b){
+  b.addEventListener('click',function(){ setFocus(Number(b.dataset.t0),Number(b.dataset.t1)); });
+});
+
+// ---------- 时间轴 ----------
+var CH=[
+ {k:'fps',n:'FPS',u:'帧/秒',c:'#2563eb'},
+ {k:'frame_p95_ms',n:'帧耗时 P95',u:'ms',c:'#7c3aed'},
+ {k:'cpu_app_pct',n:'被测进程 CPU',u:'%',c:'#c62828'},
+ {k:'pss_kb',n:'PSS 内存',u:'MB',c:'#0891b2',s:1/1024},
+ {k:'net_rx_bps',n:'网络下行',u:'KB/s',c:'#137a52',s:1/1024},
+ {k:'net_tx_bps',n:'网络上行',u:'KB/s',c:'#2f855a',s:1/1024},
+ {k:'io_write_bps',n:'磁盘写入',u:'KB/s',c:'#b26a00',s:1/1024},
+ {k:'main_thread_busy_ms',n:'主线程心跳延迟',u:'ms',c:'#d1478a'},
+ {k:'jank',n:'Jank 次数',u:'次',c:'#54637a'}
+];
+var sampleT=D.samples.map(function(r){return (r.t-D.t_start)/1000;});
+function nearestIdx(sec){
+  var lo=0,hi=sampleT.length-1;
+  while(lo<hi){var mid=(lo+hi)>>1; if(sampleT[mid]<sec) lo=mid+1; else hi=mid;}
+  if(lo>0 && Math.abs(sampleT[lo-1]-sec)<Math.abs(sampleT[lo]-sec)) lo--;
+  return lo;
+}
+function renderCharts(){
+  var host=$('#charts'); if(!host) return;
+  var maxT=sampleT.length?sampleT[sampleT.length-1]:1;
+  var x0=0,x1=maxT;
+  if(state.focus){ var f0=(state.focus[0]-D.t_start)/1000,f1=(state.focus[1]-D.t_start)/1000;
+    var pad=Math.max(1,(f1-f0)*0.25); x0=Math.max(0,f0-pad); x1=Math.min(maxT,f1+pad); if(x1-x0<1)x1=Math.min(maxT,x0+1); }
+  var W=Math.max(700,host.clientWidth-30), H=138, L=58,R=14,T=17,B=22;
+  var iw=W-L-R, ih=H-T-B;
+  var evs=D.events.filter(function(e){return ['scene','crash','anr','jank_burst'].indexOf(e.kind)>=0;}).slice(0,14);
+  var html=CH.map(function(cfg,ci){
+    var pts=D.series[cfg.k]||[];
+    var vis=pts.filter(function(p){return p[0]>=x0-0.001&&p[0]<=x1+0.001;});
+    var nums=vis.map(function(p){return p[1];}).filter(function(v){return typeof v==='number'&&isFinite(v);});
+    var body='';
+    if(!nums.length){ body='<text x="'+(L+iw/2)+'" y="'+(T+ih/2)+'" text-anchor="middle">不可用（全部为 null）</text>'; }
+    else{
+      var sc=cfg.s||1, vs=nums.map(function(v){return v*sc;});
+      var lo=Math.min.apply(null,vs), hi=Math.max.apply(null,vs);
+      if(hi===lo){hi=lo+Math.max(1,Math.abs(lo)*0.1);}
+      var span=hi-lo; lo=lo-span*0.12; hi=hi+span*0.12;
+      if(lo<0 && Math.min.apply(null,vs)>=0) lo=0;
+      var X=function(s){return L+(s-x0)/(x1-x0)*iw;};
+      var Y=function(v){return T+ih-(v-lo)/(hi-lo)*ih;};
+      // 网格
+      var g='';
+      for(var q=0;q<=3;q++){var gv=lo+(hi-lo)*q/3, gy=Y(gv);
+        g+='<line class="grid" x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+(L+iw)+'" y2="'+gy.toFixed(1)+'"/>'
+          +'<text x="'+(L-6)+'" y="'+(gy+3).toFixed(1)+'" text-anchor="end">'+num(gv,1)+'</text>';}
+      // 场景带
+      var bands='';
+      (D.scenes||[]).forEach(function(s,si){
+        var a=Math.max(x0,(s.t0-D.t_start)/1000), b=Math.min(x1,(s.t1-D.t_start)/1000);
+        if(b<=a)return;
+        bands+='<rect class="band" x="'+X(a).toFixed(1)+'" y="'+T+'" width="'+(X(b)-X(a)).toFixed(1)+'" height="'+ih+'" fill="'+(si%2?'#8494b0':'#2563eb')+'"/>';
+        if(ci===0) bands+='<text x="'+(X(a)+3).toFixed(1)+'" y="'+(T+10)+'">'+esc(s.name)+'</text>';
+      });
+      // 事件虚线
+      var evm='';
+      evs.forEach(function(e){var s=(e.t-D.t_start)/1000; if(s<x0||s>x1)return;
+        evm+='<line class="ev" x1="'+X(s).toFixed(1)+'" y1="'+T+'" x2="'+X(s).toFixed(1)+'" y2="'+(T+ih)+'"/>';
+        if(ci===0) evm+='<text x="'+(X(s)+2).toFixed(1)+'" y="'+(T+ih-3)+'">'+esc(String(e.label||e.kind).slice(0,10))+'</text>';
+      });
+      // 折线（null 断开）
+      var segs=[],cur=[];
+      vis.forEach(function(p){ if(typeof p[1]==='number'&&isFinite(p[1])) cur.push([X(p[0]),Y(p[1]*sc)]);
+        else {if(cur.length)segs.push(cur);cur=[];} });
+      if(cur.length)segs.push(cur);
+      var paths=segs.map(function(sg){
+        var d=sg.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
+        var area = sg.length>1 ? '<path class="area" fill="'+cfg.c+'" d="'+d+' L'+sg[sg.length-1][0].toFixed(1)+' '+(T+ih)+' L'+sg[0][0].toFixed(1)+' '+(T+ih)+' Z"/>' : '';
+        return area+'<path class="line" stroke="'+cfg.c+'" d="'+d+'"/>';
+      }).join('');
+      var focus='';
+      if(state.focus){var fa=X(Math.max(x0,(state.focus[0]-D.t_start)/1000)),fb=X(Math.min(x1,(state.focus[1]-D.t_start)/1000));
+        focus='<rect class="focus" x="'+fa.toFixed(1)+'" y="'+T+'" width="'+Math.max(2,fb-fa).toFixed(1)+'" height="'+ih+'"/>';}
+      body=g+bands+evm+focus+paths;
+      // x 轴刻度
+      for(var q2=0;q2<=4;q2++){var xs=x0+(x1-x0)*q2/4;
+        body+='<text x="'+X(xs).toFixed(1)+'" y="'+(T+ih+15)+'" text-anchor="middle">'+num(xs,1)+'s</text>';}
+    }
+    return '<div class="chart"><div class="ch"><b>'+esc(cfg.n)+'</b><span>'+esc(cfg.u)+'</span></div>'
+      +'<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" data-ci="'+ci+'" style="height:'+H+'px">'
+      +'<line class="axis" x1="'+L+'" y1="'+(T+ih)+'" x2="'+(L+iw)+'" y2="'+(T+ih)+'"/>'
+      +body+'<line class="cursor" id="cur'+ci+'" x1="0" y1="'+T+'" x2="0" y2="'+(T+ih)+'" style="display:none"/>'
+      +'<rect class="hit" x="'+L+'" y="'+T+'" width="'+iw+'" height="'+ih+'"/></svg></div>';
+  }).join('');
+  host.innerHTML=html;
+  // 交互：悬停联动
+  Array.prototype.forEach.call(host.querySelectorAll('svg'),function(svg){
+    var hit=svg.querySelector('.hit'), cursor=svg.querySelector('.cursor');
+    hit.addEventListener('mousemove',function(ev){
+      var box=svg.getBoundingClientRect(), px=(ev.clientX-box.left)/box.width*W;
+      var sec=x0+(px-L)/iw*(x1-x0); if(sec<x0)sec=x0; if(sec>x1)sec=x1;
+      var idx=nearestIdx(sec), r=D.samples[idx]||{};
+      Array.prototype.forEach.call(host.querySelectorAll('.cursor'),function(c){
+        var px2=L+(sampleT[idx]-x0)/(x1-x0)*iw;
+        c.setAttribute('x1',px2);c.setAttribute('x2',px2);c.style.display='';
+      });
+      var tip=$('#tip');
+      tip.innerHTML='<div class="t">'+rel(r.t)+' · '+absTime(r.t)+' · 场景 '+esc(r.scene||'—')+' · '+esc(r.page||'')+'</div>'
+        +'<table>'+CH.map(function(c){
+          var v=r[c.k]; var val=(typeof v==='number'&&isFinite(v))?num(v*(c.s||1),2)+(c.u?' '+c.u:''):'—';
+          return '<tr><th>'+esc(c.n)+'</th><td style="text-align:right">'+esc(val)+'</td></tr>';
+        }).join('')+'</table>';
+      tip.style.display='block';
+      tip.style.left=Math.min(window.innerWidth-230,ev.clientX+14)+'px';
+      tip.style.top=Math.min(window.innerHeight-260,ev.clientY+14)+'px';
+    });
+    hit.addEventListener('mouseleave',function(){
+      $('#tip').style.display='none';
+      Array.prototype.forEach.call(host.querySelectorAll('.cursor'),function(c){c.style.display='none';});
+    });
+  });
+}
+renderCharts();
+$('#reset').addEventListener('click',function(){state.focus=null;$('#focus-info').textContent='当前范围：全会话';renderCharts();});
+$('#frame-note').innerHTML='逐帧明细：'+(D.kpi.frames_logged?('<b>'+D.kpi.frames_logged+'</b> 帧已记录，1% Low / P95 / P99 均为逐帧精确值。'):'本次会话未开启逐帧明细（START 时加 <span class="mono">--ez frames true</span>），帧指标为 1 秒窗口聚合值，报告已按估算标注。')
+  +' 精确口径参见「指标口径」。';
+var rt=null; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(renderCharts,180);});
+
+// ---------- 事件检索 ----------
+var kinds={}; D.events.forEach(function(e){kinds[e.kind||'']=1;});
+$('#f-kind').innerHTML='<option value="">全部类型</option>'+Object.keys(kinds).sort().map(function(x){return '<option>'+esc(x)+'</option>';}).join('');
+function renderEvents(){
+  var q=state.q.toLowerCase();
+  var rows=D.events.filter(function(e){
+    if(state.kind&&e.kind!==state.kind)return false;
+    if(state.level&&e.level!==state.level)return false;
+    if(q){var s=[e.label,e.detail,e.stack,e.page,e.kind].join(' ').toLowerCase(); if(s.indexOf(q)<0)return false;}
+    return true;
+  });
+  $('#ev-count').textContent='共 '+rows.length+' / '+D.events.length+' 条';
+  $('#events-table').innerHTML='<thead><tr><th>相对时间</th><th>绝对时间</th><th>类型</th><th>级别</th><th>标签</th><th>详情</th><th>耗时</th><th>页面</th><th>堆栈</th></tr></thead><tbody>'
+   +(rows.length?rows.map(function(e,i){
+     var stack=e.stack?'<details><summary>查看</summary><pre>'+esc(e.stack)+'</pre></details>':'—';
+     return '<tr data-t="'+e.t+'"><td class="mono">'+rel(e.t)+'</td><td class="mono">'+absTime(e.t)+'</td><td>'+esc(e.kind)+'</td><td><span class="sev '+(e.level==='error'?'critical':(e.level==='warn'?'warn':'info'))+'">'+esc(e.level)+'</span></td><td>'+esc(e.label)+'</td><td>'+esc(e.detail||'—')+'</td><td class="num">'+num(e.duration_ms,0)+'</td><td>'+esc(e.page||'—')+'</td><td>'+stack+'</td></tr>';
+   }).join(''):'<tr><td colspan="9" class="nodata">无匹配事件</td></tr>')+'</tbody>';
+  Array.prototype.forEach.call($('#events-table').querySelectorAll('tr[data-t]'),function(tr){
+    tr.style.cursor='pointer'; tr.addEventListener('click',function(ev){
+      if(ev.target.closest('details'))return;
+      var t=Number(tr.dataset.t); setFocus(t-1000,t+1000);
+    });
+  });
+}
+renderEvents();
+$('#f-kind').addEventListener('change',function(e){state.kind=e.target.value;renderEvents();});
+$('#f-level').addEventListener('change',function(e){state.level=e.target.value;renderEvents();});
+$('#f-q').addEventListener('input',function(e){state.q=e.target.value;renderEvents();});
+
+// ---------- 原始采样 ----------
+var RKEYS=['fps','frame_ms','frame_p95_ms','jank','big_jank','frozen','cpu_app_pct','pss_kb','heap_kb','native_kb','threads','fds','gc_count','net_tx_bps','net_rx_bps','net_req','net_err','io_read_bps','io_write_bps','battery_pct','temp_c','thermal_state','main_thread_busy_ms','anr_risk'];
+var sceneNames={}; D.samples.forEach(function(r){sceneNames[String(r.scene||'')]=1;});
+$('#r-scene').innerHTML='<option value="">全部场景</option>'+Object.keys(sceneNames).sort().map(function(x){return '<option>'+esc(x)+'</option>';}).join('');
+function renderRaw(){
+  var q=state.rq.toLowerCase();
+  var rows=D.samples.filter(function(r){
+    if(state.rscene&&String(r.scene||'')!==state.rscene)return false;
+    if(q&&[r.seq,r.page,r.scene].join(' ').toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+  var show=rows.slice(0,3000);
+  $('#raw-count').textContent='显示 '+show.length+' / '+D.samples.length+' 行'+(rows.length>3000?'（表格上限 3000，CSV 导出全部）':'');
+  $('#raw-table').innerHTML='<thead><tr><th>seq</th><th>相对</th><th>场景</th><th>页面</th>'+RKEYS.map(function(k){return '<th>'+esc(k)+'</th>';}).join('')+'</tr></thead><tbody>'
+    +show.map(function(r){return '<tr><td class="num">'+r.seq+'</td><td class="mono">'+rel(r.t)+'</td><td>'+esc(r.scene)+'</td><td>'+esc(r.page)+'</td>'
+      +RKEYS.map(function(k){var v=r[k];return '<td class="num">'+(typeof v==='number'?num(v,2):(v==null?'—':esc(v)))+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>';
+}
+renderRaw();
+$('#r-scene').addEventListener('change',function(e){state.rscene=e.target.value;renderRaw();});
+$('#r-q').addEventListener('input',function(e){state.rq=e.target.value;renderRaw();});
+function exportCsv(){
+  var keys=['seq','t'].concat(RKEYS).concat(['page','scene']);
+  var lines=[keys.join(',')];
+  D.samples.forEach(function(r){lines.push(keys.map(function(k){
+    var v=r[k]; if(v===null||v===undefined)v=''; if(typeof v==='string')v='"'+v.replace(/"/g,'""')+'"'; return v;
+  }).join(','));});
+  var blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=D.source.file.replace(/\.jsonl$/,'')+'_samples.csv';a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+}
+$('#csv').addEventListener('click',exportCsv); $('#csv2').addEventListener('click',exportCsv);
+
+// ---------- 基线 / 门禁 ----------
+var gkeys=[['avg_fps','AvgFPS',''],['low1_fps','1% Low FPS',''],['frame_p95_ms','P95 帧耗时','ms'],['cpu_avg','CPU 均值','%'],
+ ['pss_avg','PSS 均值','KB'],['jank','Jank','次'],['net_rx_peak_bps','网络下行峰值','B/s'],['main_thread_max_ms','主线程最大延迟','ms']];
+if(D.baseline){
+  $('#baseline-box').innerHTML='<b style="font-size:13px">与基线对比</b><div class="tablebox" style="margin-top:8px;max-height:320px"><table><thead><tr><th>指标</th><th>基线</th><th>当前</th><th>变化</th><th>判定</th></tr></thead><tbody>'
+   +gkeys.map(function(x){var a=D.baseline[x[0]],b=k[x[0]];
+     var d=(typeof a==='number'&&typeof b==='number')?b-a:null;
+     var cls=(x[0]==='avg_fps'||x[0]==='low1_fps')?(d!==null&&d<-1?'bad-txt':'ok-txt'):(d!==null&&d>0?'bad-txt':'ok-txt');
+     return '<tr><td>'+x[1]+'</td><td class="num">'+num(a)+'</td><td class="num">'+num(b)+'</td><td class="num">'+num(d)+'</td><td class="'+cls+'">'+(d===null?'—':(d===0?'持平':(d>0?'上升':'下降')))+'</td></tr>';
+   }).join('')+'</tbody></table></div><div class="note">下降不一定代表恶化，需结合业务场景；门禁以诊断规则为准。</div>';
+}else{
+  $('#baseline-box').innerHTML='<b style="font-size:13px">基线对比</b><div class="note">本次未指定基线。命令行执行 <span class="mono">python cli/novaperf.py report &lt;session.jsonl&gt; --baseline &lt;baseline.jsonl&gt;</span> 或 <span class="mono">diff &lt;基线&gt; &lt;当前&gt;</span> 即可生成版本对比。</div>';
+}
+var g=D.gate;
+$('#gate-box').innerHTML='<b style="font-size:13px">CI 门禁</b><div style="margin-top:8px"><span class="sev '+(g.passed?'ok':'critical')+'">'+(g.passed?'PASS':'FAIL')+'</span>'
+ +' <span style="margin-left:10px">健康分 '+g.score+' / 最低 '+g.score_min+'</span>'
+ +' <span style="margin-left:10px">严重 '+g.critical+' / 上限 '+g.max_critical+'</span>'
+ +' <span style="margin-left:10px">警告 '+g.warn+' / 上限 '+g.max_warn+'</span></div>'
+ +(g.reasons.length?'<div class="note bad-txt">'+g.reasons.map(esc).join('；')+'</div>':'<div class="note ok-txt">全部规则通过。</div>')
+ +'<div class="note">报告与门禁使用同一套 RULES 阈值（<span class="mono">--rules rules.json</span> 可覆盖），确保「看到的」与「流水线卡掉的」一致。</div>';
+
+// ---------- 口径 ----------
+$('#glossary-table').innerHTML='<thead><tr><th>指标</th><th>单位</th><th>计算口径</th><th>数据来源</th></tr></thead><tbody>'
+ +(D.metric_defs||[]).map(function(d){return '<tr><td class="mono">'+esc(d[0])+'</td><td>'+esc(d[1])+'</td><td>'+esc(d[2])+'</td><td>'+esc(d[3])+'</td></tr>';}).join('')+'</tbody>';
+$('#contract').innerHTML='<b>数据契约</b>：schema v1 · JSONL（每行一个 JSON 对象）· Android / iOS 同构 · 平台不支持的指标为 <span class="mono">null</span> 而非 0 · 时间单调递增 · 禁止 NaN/Infinity。<br>'
+ +'<b>会话校验</b>：'+(D.validate.length?'<span class="bad-txt">'+D.validate.map(esc).join('；')+'</span>':'<span class="ok-txt">通过</span>')
+ +' · 源文件 <span class="mono">'+esc(D.source.file)+'</span> · '+D.source.lines+' 行 · SHA256 前 16 位 <span class="mono">'+esc(D.source.sha256)+'</span>（可用于复现审计）。<br>'
+ +'<b>精度声明</b>：'+esc(k.precision)+'。1% Low 仅在开启逐帧明细时输出精确值；窗口聚合模式下不会用估算值冒充精确 1% Low。';
+
+// ---------- 主题 ----------
+$('#theme').addEventListener('click',function(){document.body.classList.toggle('dark');renderCharts();});
+})();
+</script>
+</body>
+</html>

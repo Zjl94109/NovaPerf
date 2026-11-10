@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".DemoApp"
+        android:allowBackup="true"
+        android:label="NovaPerf Demo"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- CLI / CI 用显式广播驱动负载，无需 UI 坐标 -->
+        <receiver
+            android:name=".DemoControlReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.novaperf.demo.CPU" />
+                <action android:name="com.novaperf.demo.MEM" />
+                <action android:name="com.novaperf.demo.FREE" />
+                <action android:name="com.novaperf.demo.NET" />
+                <action android:name="com.novaperf.demo.JANK" />
+                <action android:name="com.novaperf.demo.SCENE" />
+                <action android:name="com.novaperf.demo.FLAG" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

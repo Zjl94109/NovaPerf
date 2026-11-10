@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://novaperf.dev/schema/session.schema.json",
+  "title": "NovaPerf Session Line v1",
+  "description": "一行 JSON 对象；Android 与 iOS 共用。平台不支持的指标必须为 null。",
+  "type": "object",
+  "required": ["v", "t", "type"],
+  "properties": {
+    "v": { "const": 1 },
+    "t": { "type": "integer", "minimum": 0 },
+    "type": { "enum": ["meta", "sample", "frame", "event", "summary"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "meta" } } },
+      "then": {
+        "required": ["session_id", "platform", "sdk", "root_required"],
+        "properties": {
+          "session_id": { "type": "string" },
+          "platform": { "enum": ["android", "ios"] },
+          "app": { "type": "string" },
+          "app_name": { "type": "string" },
+          "app_version": { "type": "string" },
+          "device": { "type": "string" },
+          "model": { "type": "string" },
+          "os": { "type": "string" },
+          "api": { "type": ["integer", "null"] },
+          "cores": { "type": ["integer", "null"] },
+          "refresh_hz": { "type": ["number", "null"] },
+          "root_required": { "const": false },
+          "sdk": { "type": "string" },
+          "started_at": { "type": "integer" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "sample" } } },
+      "then": {
+        "required": ["seq"],
+        "properties": {
+          "seq": { "type": "integer", "minimum": 0 },
+          "fps": { "type": ["number", "null"], "minimum": 0 },
+          "frame_ms": { "type": ["number", "null"], "minimum": 0 },
+          "frame_p95_ms": { "type": ["number", "null"], "minimum": 0 },
+          "jank": { "type": "integer", "minimum": 0 },
+          "big_jank": { "type": "integer", "minimum": 0 },
+          "frozen": { "type": "integer", "minimum": 0 },
+          "cpu_app_pct": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+          "cpu_sys_pct": { "type": ["number", "null"] },
+          "threads": { "type": ["integer", "null"] },
+          "fds": { "type": ["integer", "null"] },
+          "pss_kb": { "type": ["integer", "null"] },
+          "heap_kb": { "type": ["integer", "null"] },
+          "native_kb": { "type": ["integer", "null"] },
+          "gc_count": { "type": ["integer", "null"] },
+          "net_tx_bps": { "type": ["number", "null"] },
+          "net_rx_bps": { "type": ["number", "null"] },
+          "net_req": { "type": ["integer", "null"] },
+          "net_err": { "type": ["integer", "null"] },
+          "io_read_bps": { "type": ["number", "null"] },
+          "io_write_bps": { "type": ["number", "null"] },
+          "battery_pct": { "type": ["number", "null"] },
+          "temp_c": { "type": ["number", "null"] },
+          "thermal_state": { "enum": ["nominal", "fair", "serious", "critical", "unknown", null] },
+          "gpu_pct": { "type": ["number", "null"] },
+          "main_thread_busy_ms": { "type": ["number", "null"] },
+          "anr_risk": { "type": "integer", "enum": [0, 1] },
+          "page": { "type": ["string", "null"] },
+          "scene": { "type": ["string", "null"] }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "frame" } } },
+      "then": {
+        "required": ["dt_ms"],
+        "properties": {
+          "dt_ms": { "type": "number", "exclusiveMinimum": 0 },
+          "jank": { "type": "boolean" },
+          "big_jank": { "type": "boolean" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "event" } } },
+      "then": {
+        "required": ["kind", "level", "label"],
+        "properties": {
+          "kind": { "enum": ["scene", "lifecycle", "anr", "crash", "jank_burst", "thermal", "http", "log", "gc"] },
+          "level": { "enum": ["info", "warn", "error"] },
+          "label": { "type": "string" },
+          "detail": { "type": ["string", "null"] },
+          "stack": { "type": ["string", "null"] },
+          "page": { "type": ["string", "null"] },
+          "duration_ms": { "type": ["number", "null"] }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "summary" } } },
+      "then": {
+        "required": ["duration_ms", "samples", "frames"],
+        "properties": {
+          "duration_ms": { "type": "integer" },
+          "samples": { "type": "integer" },
+          "frames": { "type": "integer" }
+        }
+      }
+    }
+  ]
+}

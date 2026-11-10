@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- SDK 自带控制接收器，宿主 App 只需依赖 AAR 即可被 CLI 驱动，无需额外配置。
+         exported=true 供 adb 显式广播调用；不使用隐式广播（会被部分 ROM 静默拦截）。 -->
+    <application>
+        <receiver
+            android:name="com.novaperf.sdk.NovaControlReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.novaperf.START" />
+                <action android:name="com.novaperf.STOP" />
+                <action android:name="com.novaperf.FLAG" />
+                <action android:name="com.novaperf.SCENE" />
+                <action android:name="com.novaperf.STATUS" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

@@ -1,0 +1,39 @@
+name: CLI, Diagnostics & Gate
+
+on:
+  push:
+    paths: ['cli/**', 'report/**', 'schema/**', 'examples/**', '.github/workflows/cli.yml']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate bundled real-device sessions
+        run: |
+          python cli/novaperf.py validate examples/session_realdevice.jsonl
+          python cli/novaperf.py validate examples/session_frames.jsonl
+
+      - name: Generate diagnostic report end-to-end
+        run: |
+          python cli/novaperf.py report examples/session_frames.jsonl \
+            --baseline examples/session_realdevice.jsonl \
+            --title "CI smoke test" -o /tmp/novaperf-report.html
+          test -s /tmp/novaperf-report.html
+          grep -q 'np-data' /tmp/novaperf-report.html
+
+      - name: CI gate (same rules as the report)
+        run: python cli/novaperf.py gate examples/session_frames.jsonl
+
+      - name: Baseline diff
+        run: python cli/novaperf.py diff examples/session_realdevice.jsonl examples/session_frames.jsonl
+
+      - name: Schema file is valid JSON
+        run: python -m json.tool schema/session.schema.json > /dev/null

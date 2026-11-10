@@ -1,0 +1,28 @@
+#!/bin/sh
+# Gradle Wrapper (POSIX) — NovaPerf
+# Linux/macOS/CI 使用；Windows 用 gradlew.bat。
+set -e
+
+APP_HOME=$(cd -P "$(dirname "$0")" >/dev/null 2>&1 && pwd)
+CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+
+if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+    JAVACMD="$JAVA_HOME/bin/java"
+else
+    JAVACMD=java
+fi
+
+if ! command -v "$JAVACMD" >/dev/null 2>&1; then
+    echo "ERROR: java not found. Set JAVA_HOME or install a JDK (17+)." >&2
+    exit 1
+fi
+
+if [ ! -f "$CLASSPATH" ]; then
+    echo "ERROR: missing $CLASSPATH" >&2
+    exit 1
+fi
+
+exec "$JAVACMD" -Xmx64m -Xms64m \
+    -Dorg.gradle.appname=gradlew \
+    -classpath "$CLASSPATH" \
+    org.gradle.wrapper.GradleWrapperMain "$@"

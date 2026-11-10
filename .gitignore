@@ -1,0 +1,24 @@
+# 本地环境（Windows SDK 路径，CI 由 ANDROID_HOME 提供）
+android/local.properties
+
+# 构建产物
+.gradle/
+**/build/
+**/.gradle/
+*.log
+*.class
+*.dex
+
+# SwiftPM
+ios/.build/
+ios/*.xcodeproj/
+ios/.swiftpm/
+
+# Python
+__pycache__/
+*.pyc
+
+# 临时调试产物
+dist/_*
+dist/*.tmp
+.edgeprofile*/
