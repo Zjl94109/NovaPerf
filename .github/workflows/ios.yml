@@ -12,11 +12,11 @@ jobs:
   # 每次提交都跑：Linux 上的 Swift 语法校验（无需 macOS runner，秒级反馈）
   swift-syntax:
     runs-on: ubuntu-latest
+    # 直接用官方 Swift 镜像：setup-swift@v2 在 ubuntu-24.04 上找不到 5.9 工具链会 404
+    container:
+      image: swift:5.9
     steps:
       - uses: actions/checkout@v4
-      - uses: swift-actions/setup-swift@v2
-        with:
-          swift-version: '5.9'
       - name: Toolchain
         run: swift --version
       - name: Parse all Swift sources
