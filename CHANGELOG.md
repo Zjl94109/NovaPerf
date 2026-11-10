@@ -24,5 +24,5 @@
 ### 已知限制
 - 免特权设备无可靠的全局 CPU / per-App GPU 接口，`cpu_sys_pct` / `gpu_pct` 恒 `null`。
 - iOS 无系统级按 App 流量与 IO 统计，相关字段为 `null`；需业务层接 `URLSessionTaskMetrics` 才有 `net_req/net_err`。
-- 本机为 Windows，**iOS 端未做真机验证**，仅提供 macOS 可编译源码、单元测试与 CI 配置。
+- 本机为 Windows，**iOS 端未做真机验证 / macOS 编译验证**；CI 每次提交自动跑 Linux Swift 语法校验（`swiftc -parse`），完整 `swift build`/`swift test`/iOS Simulator 构建保留为手动触发的 macOS 作业（本账号 macOS runner 存在配置限制与排队）。
 - 未开启逐帧明细时不输出精确 1% Low（不估算冒充）。

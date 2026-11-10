@@ -9,10 +9,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-test:
-    # macos-14 的 arm64 默认配置在部分账号下不可用（"macos-14-arm64-us-default is not supported"），
-    # 使用 Intel macOS-13 runner + 镜像自带 Xcode/Swift 工具链，避免额外 setup-xcode 依赖。
+  # 每次提交都跑：Linux 上的 Swift 语法校验（无需 macOS runner，秒级反馈）
+  swift-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '5.9'
+      - name: Toolchain
+        run: swift --version
+      - name: Parse all Swift sources
+        run: |
+          find ios/Sources ios/Tests -name '*.swift' -print0 | xargs -0 swiftc -parse
+          echo "Swift 语法校验通过"
+
+  # 完整编译/单测/iOS Simulator 构建：需 macOS runner。
+  # 该账号的 macOS runner 曾出现 "macos-14-arm64-us-default is not supported"，
+  # macos-13 虽被接受但长时间排队，因此改为手动触发（Actions → Run workflow），
+  # 避免每次 push 挂一个永不执行的排队任务。
+  macos-build:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-13
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 

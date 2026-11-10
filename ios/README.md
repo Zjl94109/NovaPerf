@@ -2,7 +2,7 @@
 
 免越狱、零第三方依赖、无私有 API 的 Swift Package。输出与 Android **完全相同**的 JSONL 数据契约（`docs/DATA_SCHEMA.md`），因此 CLI 诊断引擎和报告可直接使用 iOS 会话文件。
 
-> 本机为 Windows（无 Xcode / macOS），iOS 端**未在真机验证**；可编译性由 `.github/workflows/ios.yml` 的 macOS runner 保证（`swift build` / `swift test` / `xcodebuild -destination iOS Simulator`）。代码中所有 UIKit 依赖都用 `#if os(iOS)` 隔离，macOS 上仍能编译并执行单元测试。
+> 本机为 Windows（无 Xcode / macOS），iOS 端**未在真机验证**。CI 每次提交自动跑 Linux Swift 语法校验（`swiftc -parse`）；完整 `swift build` / `swift test` / `xcodebuild -destination iOS Simulator` 作业因账号 macOS runner 配置限制（`macos-14-arm64-us-default is not supported`，`macos-13` 排队）改为**手动触发**（Actions → iOS Swift Package → Run workflow）。代码中所有 UIKit 依赖都用 `#if os(iOS)` 隔离。
 
 ## 集成（Swift Package Manager）
 

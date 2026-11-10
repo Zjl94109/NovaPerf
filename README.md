@@ -127,15 +127,15 @@ python cli/novaperf.py summary <session.jsonl>        # 输出 JSON 供流水线
 | 主线程 | 350ms 阻塞被 watchdog 记录（194–280ms 心跳延迟） |
 | 控制面 | 显式广播 START / STOP / FLAG / SCENE / STATUS 全部生效 |
 | 报告 | 健康分 92、门禁 PASS、无头浏览器渲染验证通过 |
-| iOS | Swift Package + macOS CI 编译/单测配置；**本机为 Windows，未做 iOS 真机验证** |
+| iOS | Swift Package + Linux Swift 语法校验 CI（每次提交自动跑）；**本机为 Windows，未做 iOS 真机 / macOS 编译验证** |
 
 ---
 
 ## iOS
 
-见 [ios/README.md](ios/README.md)：Swift Package、`CADisplayLink` 帧、`task_info` CPU / phys_footprint、`ProcessInfo.thermalState`、`URLSessionTaskMetrics` 网络埋点、`UIFileSharingEnabled` 导出。所有 UIKit 依赖用 `#if os(iOS)` 隔离，macOS CI 上可 `swift build` / `swift test` / `xcodebuild -destination iOS Simulator`。
+见 [ios/README.md](ios/README.md)：Swift Package、`CADisplayLink` 帧、`task_info` CPU / phys_footprint、`ProcessInfo.thermalState`、`URLSessionTaskMetrics` 网络埋点、`UIFileSharingEnabled` 导出。所有 UIKit 依赖用 `#if os(iOS)` 隔离。
 
-> **如实说明**：当前开发环境是 Windows，没有 Xcode / macOS / iOS 真机，iOS 端只做到「可在 macOS 编译 + 单元测试 + CI 配置」，未做真机验证。这是本版本唯一未实机验证的部分。
+> **如实说明**：当前开发环境是 Windows，没有 Xcode / macOS / iOS 真机；本账号的 GitHub macOS runner 还存在配置限制（`macos-14-arm64-us-default is not supported`，`macos-13` 长时间排队）。因此 iOS 端目前**已验证**的是：每次提交自动跑的 Linux Swift 语法校验（`.github/workflows/ios.yml` → `swiftc -parse`）；**未验证**的是 macOS 上 `swift build` / `swift test` / iOS Simulator 编译与真机采集。完整 macOS 作业保留为手动触发（Actions → iOS Swift Package → Run workflow），拿到可用 macOS 环境时执行即可。这是本版本唯一未实机验证的部分。
 
 ---
 
