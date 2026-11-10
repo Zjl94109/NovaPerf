@@ -9,7 +9,7 @@
 Xcode → File → Add Package Dependencies → 填入本仓库路径，选择 `NovaPerf` library；或 `Package.swift`：
 
 ```swift
-dependencies: [.package(url: "https://github.com/<owner>/NovaPerf.git", from: "1.0.0")]
+dependencies: [.package(url: "https://github.com/Zjl94109/NovaPerf.git", from: "1.0.1")]
 targets: [.target(name: "YourApp", dependencies: ["NovaPerf"])]
 ```
 

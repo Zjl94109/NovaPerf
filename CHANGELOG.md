@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.0.1 — 2026-11-10
+
+发布工程性修复。**SDK / CLI / 诊断引擎 / 报告功能与 v1.0.0 完全一致**，Android 源码未改动，`NovaPerf-SDK.aar` 与 `NovaPerf-Demo.apk` 沿用 v1.0.0 已真机验证的产物（未重编译）。
+
+### 修复
+- `android.yml`：移除在本账号 runner 上崩溃的 `setup-android@v3`（`Failed to find package 'tools'`），改用 runner 自带 Android SDK + `sdkmanager` 补装 platform 36 / build-tools。
+- `ios.yml`：GitHub 判 `macos-14-arm64-us-default is not supported` 直接取消工作流；改为「每次提交自动跑 Linux Swift 语法校验 + 完整 macOS 构建手动触发」，避免仓库里常驻一个永远排队的作业。
+- `ios.yml`：`setup-swift@v2` 下载 Swift 5.9 工具链返回 404，改用官方 `swift:5.9` 容器直接执行 `swiftc -parse`。
+- 补 Unix `android/gradlew`（`100755` + LF，`.gitattributes` 约束），Linux CI 可直接执行 Gradle wrapper。
+
+### 文档 / 产物
+- README、CHANGELOG、`ios/README.md` 如实标注 iOS 未真机验证与 macOS runner 限制，SPM 接入示例改用真实仓库地址。
+- `dist/NovaPerf-Report.html` / `report_preview.png` 刷新为逐帧精确版（1% Low 24.84、5% Low 46.32、基线对比、门禁 PASS、健康分 92）。
+
+### 发版资产（v1.0.1）
+| 文件 | 说明 |
+| --- | --- |
+| `NovaPerf-SDK.aar` | Android SDK（纯 Java，minSdk 23，零依赖） |
+| `NovaPerf-Demo.apk` | 被测 Demo（可直接安装复现负载） |
+| `NovaPerf-Report.html` | 单文件离线诊断报告（真机数据） |
+| `report_preview.png` | 报告渲染截图 |
+
+### CI（最终提交）
+- Android SDK & Demo：**success**（AAR / APK 构建 + 产物上传）
+- CLI, Diagnostics & Gate：**success**（契约校验 / 报告 / 门禁）
+- iOS Swift Package：`swift-syntax` **success**；`macos-build` 手动触发（未执行，已在文档标注）
+
 ## v1.0.0 — 2026-11-10
 
 首个完全换代版本。**不依赖任何 GT 3.x / GT v3.2.0 / PerfLab 代码**，从零实现。

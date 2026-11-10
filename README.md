@@ -151,7 +151,7 @@ schema/                 JSONL 数据契约（JSON Schema v1）
 docs/                   架构 / 契约 / 指标口径 / 使用手册 / 诊断规则 / 排查手册
 examples/               两份真机会话（含逐帧明细）
 dist/                   发版产物：AAR、APK、最终报告、报告截图
-.github/workflows/      Android 构建、iOS(macOS) 构建与测试、CLI 门禁
+.github/workflows/      Android 构建、CLI 门禁、iOS Linux 语法校验 + 手动 macOS 构建
 scripts/                Windows 一键构建
 ```
 
@@ -160,5 +160,5 @@ scripts/                Windows 一键构建
 ## 开源与版本
 
 - License：**MIT**（[LICENSE](LICENSE)），永久免费、可商用、可修改。
-- 当前版本：**v1.0.0**（[CHANGELOG.md](CHANGELOG.md)）。
+- 当前版本：**v1.0.1**（[CHANGELOG.md](CHANGELOG.md)），首个 v1.0.0 之后补齐 CI / 文档与发版资产。
 - 贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)；数据契约变更必须同步 `schema/`、`docs/`、SDK 与 CLI。
