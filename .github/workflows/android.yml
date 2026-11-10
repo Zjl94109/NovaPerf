@@ -2,6 +2,7 @@ name: Android SDK & Demo
 
 on:
   push:
+    branches: [main]
     paths: ['android/**', '.github/workflows/android.yml']
   pull_request:
     paths: ['android/**', '.github/workflows/android.yml']
@@ -18,16 +19,30 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
-      - name: Install Android platform
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" > /dev/null
+      # ubuntu-latest 镜像自带 Android SDK；不使用 setup-android@v3
+      # （该 action 调用旧版 sdkmanager --list 在新 runner 上会报 "Failed to find package 'tools'" 并崩溃）
+      - name: Prepare Android SDK
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "SDK=$SDK"
+          ls "$SDK/platforms" 2>/dev/null || true
+          SM=$(find "$SDK/cmdline-tools" -name sdkmanager -type f 2>/dev/null | sort | tail -1)
+          echo "sdkmanager=$SM"
+          if [ -n "$SM" ]; then
+            yes | "$SM" --licenses >/dev/null 2>&1 || true
+            "$SM" "platforms;android-36" "build-tools;36.0.0" || true
+          fi
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          ls "$SDK/platforms" 2>/dev/null || true
 
       - name: Build SDK AAR + Demo APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew :novaperf-sdk:assembleRelease :demo:assembleDebug --console=plain --stacktrace
+          ./gradlew :novaperf-sdk:assembleRelease :demo:assembleDebug --console=plain --no-daemon --stacktrace
 
       - name: Verify artifacts
         run: |

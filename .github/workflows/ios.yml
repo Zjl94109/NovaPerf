@@ -2,6 +2,7 @@ name: iOS Swift Package
 
 on:
   push:
+    branches: [main]
     paths: ['ios/**', '.github/workflows/ios.yml']
   pull_request:
     paths: ['ios/**', '.github/workflows/ios.yml']
@@ -9,13 +10,16 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: macos-14
+    # macos-14 的 arm64 默认配置在部分账号下不可用（"macos-14-arm64-us-default is not supported"），
+    # 使用 Intel macOS-13 runner + 镜像自带 Xcode/Swift 工具链，避免额外 setup-xcode 依赖。
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
 
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '15.4'
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
 
       - name: Swift build (macOS)
         working-directory: ios
@@ -23,7 +27,7 @@ jobs:
 
       - name: Unit tests (schema / writer / null contract)
         working-directory: ios
-        run: swift test --parallel
+        run: swift test
 
       - name: Build for iOS Simulator
         working-directory: ios

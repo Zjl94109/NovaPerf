@@ -2,6 +2,7 @@ name: CLI, Diagnostics & Gate
 
 on:
   push:
+    branches: [main]
     paths: ['cli/**', 'report/**', 'schema/**', 'examples/**', '.github/workflows/cli.yml']
   pull_request:
   workflow_dispatch:
