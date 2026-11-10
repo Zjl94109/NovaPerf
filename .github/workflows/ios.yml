@@ -9,7 +9,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 每次提交都跑：Linux 上的 Swift 语法校验（无需 macOS runner，秒级反馈）
+  # 每次提交都跑：Linux 上的真实编译 + 单元测试（无需 macOS runner）
+  # 说明：Linux 不能验证 UIKit / CADisplayLink / Mach 分支，那是 iOS 真机专属；
+  #       但 Schema / SessionWriter / 采样调度 / null 契约这些共享核心会被真实编译并执行。
   swift-syntax:
     runs-on: ubuntu-latest
     # 直接用官方 Swift 镜像：setup-swift@v2 在 ubuntu-24.04 上找不到 5.9 工具链会 404
@@ -23,6 +25,12 @@ jobs:
         run: |
           find ios/Sources ios/Tests -name '*.swift' -print0 | xargs -0 swiftc -parse
           echo "Swift 语法校验通过"
+      - name: Swift build (Linux shared core)
+        working-directory: ios
+        run: swift build -c debug
+      - name: Swift unit tests (schema / writer / null contract)
+        working-directory: ios
+        run: swift test
 
   # 完整编译/单测/iOS Simulator 构建：需 macOS runner。
   # 该账号的 macOS runner 曾出现 "macos-14-arm64-us-default is not supported"，

@@ -76,7 +76,9 @@ public enum Collectors {
     }
 
     /// 热状态：nominal / fair / serious / critical / unknown。
+    /// Linux（CI）的 Foundation 无 thermalState，诚实返回 unknown，不编造数值。
     public static func thermalState() -> String {
+        #if canImport(Darwin)
         switch ProcessInfo.processInfo.thermalState {
         case .nominal: return "nominal"
         case .fair: return "fair"
@@ -84,6 +86,9 @@ public enum Collectors {
         case .critical: return "critical"
         @unknown default: return "unknown"
         }
+        #else
+        return "unknown"
+        #endif
     }
 
     public static func refreshHz() -> Double {
@@ -101,6 +106,8 @@ public enum Collectors {
     public static func osVersion() -> String {
         #if os(iOS)
         return "iOS " + UIDevice.current.systemVersion
+        #elseif os(Linux)
+        return "Linux " + ProcessInfo.processInfo.operatingSystemVersionString
         #else
         return "macOS " + ProcessInfo.processInfo.operatingSystemVersionString
         #endif

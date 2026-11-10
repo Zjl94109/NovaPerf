@@ -1,9 +1,12 @@
 import Foundation
+import Dispatch
 #if os(iOS)
 import UIKit
 #endif
 
+#if canImport(Darwin)
 private var previousNovaPerfExceptionHandler: (@convention(c) (NSException) -> Void)?
+#endif
 
 /// NovaPerf iOS SDK：免越狱、无私有 API、无第三方依赖，输出与 Android 完全相同的 JSONL 契约。
 ///
@@ -306,6 +309,8 @@ public final class NovaPerf {
 
     private func installCrashHandlerOnce() {
         guard !crashInstalled else { return }
+        // NSUncaughtExceptionHandler 是 Darwin/Objective-C 运行时能力；Linux（CI）无此 API。
+        #if canImport(Darwin)
         crashInstalled = true
         previousNovaPerfExceptionHandler = NSGetUncaughtExceptionHandler()
         NSSetUncaughtExceptionHandler { exception in
@@ -313,6 +318,7 @@ public final class NovaPerf {
                                         stack: exception.callStackSymbols.joined(separator: "\n"))
             previousNovaPerfExceptionHandler?(exception)
         }
+        #endif
     }
 
     private func recordCrash(reason: String?, stack: String) {

@@ -7,7 +7,8 @@
 ### 修复
 - `android.yml`：移除在本账号 runner 上崩溃的 `setup-android@v3`（`Failed to find package 'tools'`），改用 runner 自带 Android SDK + `sdkmanager` 补装 platform 36 / build-tools。
 - `ios.yml`：GitHub 判 `macos-14-arm64-us-default is not supported` 直接取消工作流；改为「每次提交自动跑 Linux Swift 语法校验 + 完整 macOS 构建手动触发」，避免仓库里常驻一个永远排队的作业。
-- `ios.yml`：`setup-swift@v2` 下载 Swift 5.9 工具链返回 404，改用官方 `swift:5.9` 容器直接执行 `swiftc -parse`。
+- `ios.yml`：`setup-swift@v2` 下载 Swift 5.9 工具链返回 404，改用官方 `swift:5.9` 容器。
+- **iOS 验证强度升级**：Linux CI 从「只做 `swiftc -parse` 语法校验」提升为 `swift build` + `swift test` 真实编译并执行单元测试。为此把 `Darwin` 专属能力用条件编译隔离：`NSUncaughtExceptionHandler`（崩溃捕获）、`ProcessInfo.thermalState`（热状态）；Linux 上热状态诚实返回 `unknown`、不注册崩溃钩子。共享核心（JSONL 契约、SessionWriter、采样调度、null 语义）在 Linux 上被真实编译执行，但 **UIKit / CADisplayLink / Mach 分支仍只能在 macOS / iOS 验证**。
 - 补 Unix `android/gradlew`（`100755` + LF，`.gitattributes` 约束），Linux CI 可直接执行 Gradle wrapper。
 
 ### 文档 / 产物
